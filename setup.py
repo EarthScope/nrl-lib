@@ -5,7 +5,7 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst', 'rt') as readme_file:
+with open('README.md', 'rt') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst', 'rt') as history_file:
@@ -28,7 +28,7 @@ setup(
     entry_points={
         'console_scripts': [],
     },
-    install_requires=['configobj'],
+    install_requires=['configobj', 'requests', 'types-requests'],
     setup_requires=[],
     extras_require={
         'dev': [
@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     keywords='nrl',
     name='nrl',
-    packages=find_packages(include=['nrl']),
+    packages=find_packages(),
     url='https://git.passcal.nmt.edu/software_public/nrl',
     version='2024.1.0.0',
     zip_safe=False,
