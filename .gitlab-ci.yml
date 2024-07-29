@@ -24,7 +24,7 @@ before_script:
 flake8:
   image: python:3.10
   tags:
-  - nrl
+  - passoft
   stage: Static Analysis and Test
   script:
   - flake8 nrl tests
@@ -32,7 +32,7 @@ flake8:
 mypy:
   image: python:3.10
   tags:
-  - nrl
+  - passoft
   stage: Static Analysis and Test
   script:
   - python -m mypy --config-file ./setup.cfg nrl
@@ -40,7 +40,7 @@ mypy:
 python3.9:
   image: python:3.9
   tags:
-  - nrl
+  - passoft
   stage: Static Analysis and Test
   script:
   - python -m unittest
@@ -49,7 +49,7 @@ python3.9:
 python3.10:
   image: python:3.10
   tags:
-  - nrl
+  - passoft
   stage: Static Analysis and Test
   script:
   - python -m unittest
@@ -58,7 +58,7 @@ python3.10:
 python3.11:
   image: python:3.11
   tags:
-    - nrl
+    - passoft
   stage: Static Analysis and Test
   script:
     - python -m unittest
