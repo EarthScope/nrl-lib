@@ -299,7 +299,7 @@ class NRLQuery:
 
     @staticmethod
     def __rename_file_name_time_stamp(file_name: str) -> str:
-        time_stamp = str(datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'))
+        time_stamp = str(datetime.now().strftime('%Y-%m-%dT%H_%M_%S_%f'))
         prefix = NRLQuery.__extract_prefix(file_name)
         split_file_name = file_name.split('.')
         if len(split_file_name) == 2:
