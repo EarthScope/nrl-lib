@@ -4,13 +4,20 @@ return fully formed instrument responses in FDSN StationXML, RESP, or
 StationXML-Response formats. It can also return a full version of the Library
 for local use, similar to that used by the original Nominal Response Library.
 """
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
-from nrl.nrl_utility import is_valid_element
+
+from nrl.logging_setup import log_config_manager
 from nrl.nrl_q_property import (NRLQueryPropertyInterface,
                                 VALID_COMBINE_OUTPUT_FORMATS, VALID_NODATA)
+from nrl.nrl_utility import is_valid_element
+
+# set up the logger
+log_config_manager.setup_logging(default_level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -166,11 +173,18 @@ class CombineQuery(NRLQueryPropertyInterface):
         :return: None
         """
         if user_input is None:
-            raise ValueError("No data provided for the combine query! The "
-                             "input dictionary must contain the following keys"
-                             " and values: "
-                             "element, manufacturer, model, instconfig, "
-                             "updated_since  format, nodata, and epoch")
+            if self.error_handler:
+                logging.error("No data provided for the combine query! The "
+                              "input dictionary must contain the following "
+                              "keys and values: element, manufacturer, model,"
+                              " instconfig, updated_since  format, nodata, and"
+                              " epoch")
+            else:
+                raise ValueError("No data provided for the combine query! The "
+                                 "input dictionary must contain the following "
+                                 "keys and values: element, manufacturer, "
+                                 "model, instconfig, updated_since  format, "
+                                 "nodata, and epoch")
         # First check and see if the user has provided the entry for any of
         # the following parameters
         if not self.flag.instconfig_selected:
@@ -192,15 +206,14 @@ class CombineQuery(NRLQueryPropertyInterface):
                 not self.flag.manufacturer_selected and
                 not self.flag.model_selected):
             if self.error_handler:
-                # TODO: Replace this print statement with logging
-                print("No entry provided for neither instrument configuration "
-                      "nor element|manufacturer|model. The query has been "
-                      "ignored")
+                logging.error("No entry provided for neither instrument "
+                              "configuration nor element|manufacturer|model. "
+                              "The query has been ignored")
             else:
-                print('You must provide a value for the instconfig parameter'
-                      ' (non-wildcard). Alternatively provide '
-                      'element|manufacturer|model parameters '
-                      '(wildcards allowed)')
+                logging.critical('You must provide a value for the instconfig'
+                                 ' parameter (non-wildcard). Alternatively '
+                                 'provide element|manufacturer|model '
+                                 'parameters (wildcards allowed)')
                 raise ValueError
         # Go through the user entry and address each one separately
         for key, value in user_input.items():
@@ -260,10 +273,11 @@ class CombineQuery(NRLQueryPropertyInterface):
                 self.combine_prop.element.append(item)
             else:
                 if self.error_handler:
-                    # TODO: Replace this print statement with logging
-                    print(f'The entry {item} for the element input is not '
-                          f'valid and will be ignored.')
+                    logging.error(f'The entry {item} for the element input is '
+                                  f'not valid and will be ignored.')
                 else:
+                    logging.critical(f"The entry '{item}' is not a valid input"
+                                     f" for the element!")
                     raise ValueError(f"The entry '{item}' is not a valid input"
                                      f" for the element!")
 
@@ -467,6 +481,9 @@ class CombineQuery(NRLQueryPropertyInterface):
         if output_format in VALID_COMBINE_OUTPUT_FORMATS:
             self.combine_prop.output_format = output_format
         else:
+            logging.warning(f"The value, {output_format}, is not a valid input"
+                            f" for the format. The default format, resp, "
+                            f"chosen.")
             print(f"The value, {output_format}, is not a valid input for the "
                   f"format. The default format, resp, chosen.")
 
@@ -517,10 +534,12 @@ class CombineQuery(NRLQueryPropertyInterface):
                 self.__validate_end_time(value)
             else:
                 if self.error_handler:
-                    # TODO: Replace this print statement with logging
-                    print(f'The pair key, {key}, -> value, {value}, is not a '
-                          f'valid entry for the Epoch. The entry is ignored.')
+                    logging.error(f'The pair key, {key}, -> value, {value}, is'
+                                  f' not a valid entry for the Epoch. The '
+                                  f'entry is ignored.')
                 else:
+                    logging.critical(f'The pair key, {key}, -> value, {value},'
+                                     f' is not a valid entry for the Epoch')
                     raise ValueError(f'The pair key, {key}, -> value, {value},'
                                      f' is not a valid entry for the Epoch')
 
@@ -562,11 +581,13 @@ class CombineQuery(NRLQueryPropertyInterface):
             self.flag.network_selected = False
             return
         if len(network) != 2:
-            # TODO: Replace the print statement with logging
             if self.error_handler:
-                print(f"Network codes must be represented with two letters. "
-                      f"The invalid network code, {network}, is ignored.")
+                logging.error(f"Network codes must be represented with two "
+                              f"letters. The invalid network code, {network}, "
+                              f"is ignored.")
             else:
+                logging.critical(f"The value for the network, {network}, is "
+                                 f"not a valid input.")
                 raise ValueError(f"The value for the network, {network}, is "
                                  f"not a valid input.")
         self.combine_prop.epoch.network = network
