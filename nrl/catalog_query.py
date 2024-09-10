@@ -8,12 +8,18 @@ Output formats:
     json (JSON .json)
     text (plain text .txt)
 """
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from nrl.nrl_utility import is_valid_element
 from nrl.nrl_q_property import (NRLQueryPropertyInterface, VALID_NODATA,
                                 VALID_OUTPUT_FORMAT,
                                 VALID_LEVEL)
+from nrl.logging_setup import log_config_manager
+
+# Set up logger
+log_config_manager.setup_logging(default_level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -116,10 +122,13 @@ class CatalogQuery(NRLQueryPropertyInterface):
         """
         if user_input is None:
             if self.error_handler:
-                # TODO: Replace the print statement with logging
-                print("Error: No data provided for the catalog query!")
-
+                logger.error("Error: No data provided for the catalog query!")
             else:
+                logger.critical("No data provided for the catalog query! The "
+                                "input dictionary must contain the following "
+                                "key/value pairs: nodata, element, "
+                                "manufacturer, model, level, format, and "
+                                "updated_since")
                 raise ValueError("No data provided for the catalog query! The "
                                  "input dictionary must contain the following "
                                  "key/value pairs: nodata, element, "
@@ -135,13 +144,12 @@ class CatalogQuery(NRLQueryPropertyInterface):
             self.flag.model_selected = False
         if 'level' not in user_input:
             if self.error_handler:
-                # TODO: Replace the print statement with the logger
-                print('The entry, level, is missing and it is required! The '
-                      'default value, element, will be replaced')
+                logger.error('The entry, level, is missing and it is required!'
+                             ' The default value, element, will be replaced')
                 self.__validate_level('')
             else:
-                print('The entry, level, is missing! It is required for the '
-                      'Catalog query')
+                logger.critical('The entry, level, is missing! It is required'
+                                ' for the Catalog query')
                 raise ValueError
 
         for key, value in user_input.items():
@@ -160,6 +168,8 @@ class CatalogQuery(NRLQueryPropertyInterface):
             elif key == 'nodata':
                 self.__validate_nodata(value)
             else:
+                logging.warning(f'Wrong key, {key}, is passed to the '
+                                f'dictionary. It will be ignored.')
                 print(f'Wrong key, {key}, is passed to the dictionary. It will'
                       f' be ignored.')
 
@@ -172,6 +182,8 @@ class CatalogQuery(NRLQueryPropertyInterface):
         if nodata in VALID_NODATA:
             self.catalog_prop.nodata = nodata
         else:
+            logging.error(f"The value, {nodata}, is not a valid input for the "
+                          f"nodata. The default nodata value, 404, chosen")
             print(f"The value, {nodata}, is not a valid input for the "
                   f"nodata. The default nodata value, 404, chosen")
 

@@ -4,9 +4,15 @@ service will return the prefix table of instrument configuration prefixes with
  their names and associated logic tree questions.
  The output format can be xml, json or txt .
 """
+import logging
 from dataclasses import dataclass
 from nrl.nrl_q_property import (NRLQueryPropertyInterface, VALID_NODATA,
                                 VALID_OUTPUT_FORMAT)
+from nrl.logging_setup import log_config_manager
+
+# set up the logger
+log_config_manager.setup_logging(default_level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -60,7 +66,6 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         construct the prefix lookup query. The string format of the output will
         be /prefix-lookup? [format-options] [nodata-options]
         """  # noqa: E501
-        self.__reset_defaults()
         self.__build_prefix_lookup_property(nrl_property)
         prefix_query = (f"prefix-lookup?format="
                         f"{self.prefix_prop.output_format}&nodata="
@@ -79,10 +84,14 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
                                                     nodata=404)
         if user_input is not None and len(user_input) != 2:
             if self.error_handler:
-                # TODO: Replace print to terminal with logging
-                print("The query, prefix_lookup, accepts two entries, nodata "
-                      "and format. The additional input will be ignored")
+                logger.error("The query, prefix_lookup, accepts two entries, "
+                             "nodata and format. The additional input will be"
+                             " ignored")
             else:
+                logger.critical(f"Two key/value pairs, 'format' and 'nodata',"
+                                f" are required for the prefix lookup query. "
+                                f"The size of the input dictionary is "
+                                f"{len(user_input)}")
                 raise ValueError(f"Two key/value pairs, 'format' and 'nodata',"
                                  f" are required for the prefix lookup query. "
                                  f"The size of the input dictionary is "
@@ -94,7 +103,11 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
             elif key == 'nodata':
                 self.__validate_input_nodata(value)
             else:
-                raise ValueError(f'The key, {key} is not a valid entry')
+                if self.error_handler:
+                    logging.error(f'The key, {key} is not a valid entry')
+                else:
+                    logging.critical(f'The key, {key} is not a valid entry')
+                    raise ValueError(f'The key, {key} is not a valid entry')
 
     def __validate_output_format(self, output_format: str) -> None:
         """
@@ -106,6 +119,9 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         if output_format in VALID_OUTPUT_FORMAT:
             self.prefix_prop.output_format = output_format
         else:
+            logging.warning(f"The value, {output_format}, is not a valid input"
+                            f" for the format. The default format, xml, "
+                            f"chosen.")
             print(f"The value, {output_format}, is not a valid input for the "
                   f"format. The default format, xml, chosen.")
 
@@ -118,5 +134,8 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         if nodata in VALID_NODATA:
             self.prefix_prop.nodata = nodata
         else:
+            logging.warning(f"The value, {nodata}, is not a valid input for "
+                            f"the nodata. The default nodata value, 404, "
+                            f"chosen")
             print(f"The value, {nodata}, is not a valid input for the "
                   f"nodata. The default nodata value, 404, chosen")

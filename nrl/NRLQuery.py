@@ -159,7 +159,6 @@ class NRLQuery:
 
         # Build the entire URL
         comb_url = self.__assemble_url(comb_query)
-
         # Send the request to the NRL web service
         nrl_response = NRLQuery.__send_query(comb_url)
         return nrl_response

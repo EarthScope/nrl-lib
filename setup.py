@@ -28,7 +28,7 @@ setup(
     entry_points={
         'console_scripts': [],
     },
-    install_requires=['configobj', 'requests', 'types-requests'],
+    install_requires=['configobj', 'requests', 'types-requests', 'pyyaml'],
     setup_requires=[],
     extras_require={
         'dev': [
