@@ -40,7 +40,7 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         """
         Change the status of the error handler for different combine queries.
         True means ignore input errors and continue processing the rest of the
-        requests and False means terminate the process and return the error
+        requests, and False means terminate the process and return the error
         message.
         :param status: Set the status of the error handler
         :return: None
