@@ -28,6 +28,7 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
     def __init__(self):
         super().__init__()
         self.prefix_prop = PrefixLookupProperty()
+        self.__error_handler = True
 
     def __reset_defaults(self) -> None:
         """
@@ -40,12 +41,12 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         """
         Change the status of the error handler for different combine queries.
         True means ignore input errors and continue processing the rest of the
-        requests, and False means terminate the process and return the error
+         requests, and False means terminate the process and return the error
         message.
         :param status: Set the status of the error handler
         :return: None
         """
-        self.error_handler = status
+        self.__error_handler = status
 
     def build_query(self, nrl_property: dict) -> str:
         """
@@ -83,7 +84,7 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
             self.prefix_prop = PrefixLookupProperty(output_format="xml",
                                                     nodata=404)
         if user_input is not None and len(user_input) != 2:
-            if self.error_handler:
+            if self.__error_handler:
                 logger.error("The query, prefix_lookup, accepts two entries, "
                              "nodata and format. The additional input will be"
                              " ignored")
@@ -103,7 +104,7 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
             elif key == 'nodata':
                 self.__validate_input_nodata(value)
             else:
-                if self.error_handler:
+                if self.__error_handler:
                     logging.error(f'The key, {key} is not a valid entry')
                 else:
                     logging.critical(f'The key, {key} is not a valid entry')
