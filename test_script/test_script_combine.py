@@ -16,7 +16,7 @@ nrl = NRLQuery()
 # Create a couple of queries
 combine_prop_one = {
     'instconfig': 'sensor_CEADASE_CPHM-500_LP1_PG8_SG2250_STgroundVel:datalogger_EQMet_SMA_FR50',
-    'element': ['datalogger'],
+    'element': ['Datalogger'],
     'manufacturer': [],
     'model': [],
     'updated_since': datetime(2018, 1, 6),
@@ -70,7 +70,7 @@ combine_prop_three = {
 
 combine_prop_four = {
     'element': ['integrated', 'soh'],
-    'manufacturer': [],
+    'manufacturer': ['*'],
     'model': [],
     'updated_since': datetime(2021, 1, 1),
     'format': 'stationxml.zip',
