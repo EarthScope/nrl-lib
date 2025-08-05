@@ -10,7 +10,7 @@ from datetime import datetime
 
 import re
 import requests
-from typing import Optional
+from typing import Optional, Union
 from pathlib import Path
 from nrl.urlbuild import URLBuild
 from nrl.combine_query import CombineQuery
@@ -31,6 +31,9 @@ class NRLQuery:
         self.response = None
         self.nrl_property: dict = dict()
         self.url_builder = URLBuild()
+        self.combine_query = CombineQuery()
+        self.catalog_query = CatalogQuery()
+        self.prefix_lookup_query = PrefixLookupQuery()
 
     def __reset_defaults(self):
         """
@@ -154,8 +157,7 @@ class NRLQuery:
         :rtype: requests.Response
         """
         # Create the query section of the URL
-        combine = CombineQuery()
-        comb_query = combine.build_query(combine_query_property)
+        comb_query = self.combine_query.build_query(combine_query_property)
 
         # Build the entire URL
         comb_url = self.__assemble_url(comb_query)
@@ -175,8 +177,7 @@ class NRLQuery:
         :rtype: requests.Response
         """
         # Create the query section of the URL
-        catalog = CatalogQuery()
-        cat_query = catalog.build_query(catalog_query_property)
+        cat_query = self.catalog_query.build_query(catalog_query_property)
 
         # Build the entire URL
         cat_url = self.__assemble_url(cat_query)
@@ -196,9 +197,8 @@ class NRLQuery:
         :return: Response from the NRL web service
         :rtype: requests.Response
         """
-        # Create the query section of th URL
-        prefix_lookup = PrefixLookupQuery()
-        prefix_lookup_query = prefix_lookup.build_query(
+        # Create the query section of the URL
+        prefix_lookup_query = self.prefix_lookup_query.build_query(
             prefix_lookup_query_property)
 
         # Build the entire URL
@@ -383,3 +383,22 @@ class NRLQuery:
             print("Error download file", e)
             return False
         return True
+
+    def set_error_handler(self, status: Optional[Union[dict, bool]] = True):
+        """
+        Set the error handler flag for combine, catalog, and prefix-lookup modules.
+        :param status: Boolean to set all, or dict for per-query control.
+        :return: None
+        """
+        if isinstance(status, dict):
+            if 'combine' in status:
+                self.combine_query.set_error_handler(status['combine'])
+            if 'catalog' in status:
+                self.catalog_query.set_error_handler(status['catalog'])
+            if 'prefix-lookup' in status:
+                self.prefix_lookup_query.set_error_handler(
+                    status['prefix-lookup'])
+        else:
+            self.combine_query.set_error_handler(status)
+            self.catalog_query.set_error_handler(status)
+            self.prefix_lookup_query.set_error_handler(status)

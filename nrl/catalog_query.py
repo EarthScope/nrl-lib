@@ -35,7 +35,7 @@ class CatalogProperty:
     element: list = field(default_factory=list)
     manufacturer: list = field(default_factory=list)
     model: list = field(default_factory=list)
-    level = ''
+    level: str = 'configuration'
     updated_since: datetime = datetime.now()
     output_format: str = 'xml'
     nodata: int = 404
@@ -51,6 +51,7 @@ class CatalogQuery(NRLQueryPropertyInterface):
         super().__init__()
         self.catalog_prop = CatalogProperty()
         self.flag = CatalogFlags()
+        self.__error_handler = True
 
     def __reset_defaults(self) -> None:
         """
@@ -60,16 +61,16 @@ class CatalogQuery(NRLQueryPropertyInterface):
         self.catalog_prop = CatalogProperty()
         self.flag = CatalogFlags()
 
-    def set_error_handler(self, status: bool) -> None:
+    def set_error_handler(self, status: bool = True) -> None:
         """
         Change the status of the error handler for different combine queries.
         True means ignore input errors and continue processing the rest of the
-        requests and False means terminate the process and return the error
+         requests, and False means terminate the process and return the error
         message.
         :param status: Set the status of the error handler
         :return: None
         """
-        self.error_handler = status
+        self.__error_handler = status
 
     def build_query(self, nrl_property: dict) -> str:
         """
@@ -103,14 +104,25 @@ class CatalogQuery(NRLQueryPropertyInterface):
             self.flag.updated_since_selected = False
 
         self.__build_catalog_property(nrl_property)
-        catalog_query = (f"catalog?{self.__build_element()}"
-                         f"{self.__build_manufacturer()}"
-                         f"{self.__build_model()}"
-                         f"{self.__build_level()}"
-                         f"{self.__build_updated_since()}"
-                         f"{self.__build_output_format()}"
-                         f"{self.__build_nodata()}")
-        return catalog_query
+
+        params = []
+        if self.flag.element_selected and self.catalog_prop.element:
+            params.append(self.__build_element())
+        if self.flag.manufacturer_selected and self.catalog_prop.manufacturer:
+            params.append(self.__build_manufacturer())
+        if self.flag.model_selected and self.catalog_prop.model:
+            params.append(self.__build_model())
+
+        params.append(self.__build_level())
+
+        if self.flag.updated_since_selected:
+            params.append(self.__build_updated_since())
+
+        params.append(self.__build_output_format())
+        params.append(self.__build_nodata())
+        catalog_query_output = f"catalog?{'&'.join(filter(None, params))}"
+        logging.info(f"Catalog query: {catalog_query_output}")
+        return catalog_query_output
 
     def __build_catalog_property(self, user_input: dict) -> None:
         """
@@ -121,7 +133,7 @@ class CatalogQuery(NRLQueryPropertyInterface):
         :return: None
         """
         if user_input is None:
-            if self.error_handler:
+            if self.__error_handler:
                 logger.error("Error: No data provided for the catalog query!")
             else:
                 logger.critical("No data provided for the catalog query! The "
@@ -143,14 +155,16 @@ class CatalogQuery(NRLQueryPropertyInterface):
         if 'model' not in user_input:
             self.flag.model_selected = False
         if 'level' not in user_input:
-            if self.error_handler:
-                logger.error('The entry, level, is missing and it is required!'
-                             ' The default value, element, will be replaced')
-                self.__validate_level('')
+            if self.__error_handler:
+                logger.warning('The entry, level, is missing. The default  '
+                               'value, configuration, will be used.')
+                self.__validate_level('configuration')
             else:
-                logger.critical('The entry, level, is missing! It is required'
-                                ' for the Catalog query')
-                raise ValueError
+                logger.error('The entry, level, is missing. The default '
+                             'value, configuration, will be used.')
+                self.__validate_level('configuration')
+        else:
+            self.__validate_level(user_input.get('level', 'configuration'))
 
         for key, value in user_input.items():
             if key == 'element':
@@ -160,7 +174,8 @@ class CatalogQuery(NRLQueryPropertyInterface):
             elif key == 'model':
                 self.__validate_model(value)
             elif key == 'level':
-                self.__validate_level(value)
+                # Already handled above
+                pass
             elif key == 'format':
                 self.__validate_output_format(value)
             elif key == 'updated_since':
@@ -182,17 +197,17 @@ class CatalogQuery(NRLQueryPropertyInterface):
         if nodata in VALID_NODATA:
             self.catalog_prop.nodata = nodata
         else:
-            logging.error(f"The value, {nodata}, is not a valid input for the "
-                          f"nodata. The default nodata value, 404, chosen")
-            print(f"The value, {nodata}, is not a valid input for the "
-                  f"nodata. The default nodata value, 404, chosen")
+            logging.warning(f"The value, {nodata}, is not a valid input for "
+                            f"the nodata. The default nodata value, 204, "
+                            f"chosen")
+            self.catalog_prop.nodata = 404
 
     def __build_nodata(self) -> str:
         """
         Return the string presentation of the nodata value
         :return: string presentation of the nodata value
         """
-        return f'&nodata={self.catalog_prop.nodata}'
+        return f'nodata={self.catalog_prop.nodata}'
 
     def __validate_element(self, element: list) -> None:
         """
@@ -200,21 +215,22 @@ class CatalogQuery(NRLQueryPropertyInterface):
         :param element: The user entry for the list of elements.
         :return: None
         """
-        # if no entry or empty entry for element then change the flag to false
+        # if no entry or empty entry for element, then change the flag to false
         # and return empty string for element
         if not self.flag.element_selected or element in self.__BAD_USER_ENTRY:
             self.flag.element_selected = False
-            self.catalog_prop.element = ['']
+            self.catalog_prop.element = []
             return
         for item in element:
-            if is_valid_element(item):
+            if is_valid_element(item.lower()):
                 self.catalog_prop.element.append(item)
             else:
-                if self.error_handler:
-                    # TODO: Replace this print statement with logging
+                if self.__error_handler:
+                    logger.error(f'The entry, element, {item}, is invalid.')
                     print(f'The entry for element attribute, {item}, is not '
                           f'valid. The entry will be excluded from the query.')
                 else:
+                    logger.critical(f'The entry, element, {item}, is invalid.')
                     raise ValueError(f"The entry '{item}' is not a valid "
                                      f"input for the element!")
 
@@ -243,7 +259,7 @@ class CatalogQuery(NRLQueryPropertyInterface):
         if (not self.flag.manufacturer_selected or
                 manufacturer in self.__BAD_USER_ENTRY):
             self.flag.manufacturer_selected = False
-            self.catalog_prop.manufacturer = ['']
+            self.catalog_prop.manufacturer = []
             return
         for mnfr in manufacturer:
             self.catalog_prop.manufacturer.append(mnfr)
@@ -256,12 +272,9 @@ class CatalogQuery(NRLQueryPropertyInterface):
         if not self.flag.manufacturer_selected:
             return ''
         str_manufacturer = ','.join(self.catalog_prop.manufacturer)
-        if not self.flag.element_selected:
-            return f'manufacturer={str_manufacturer}'
-        else:
-            return f'&manufacturer={str_manufacturer}'
+        return f'manufacturer={str_manufacturer}'
 
-    def __validate_model(self, model: str) -> None:
+    def __validate_model(self, model: list) -> None:
         """
         Validate and assign the correct "model" value for the catalog query
         :param model: The user entry for the model value
@@ -278,7 +291,7 @@ class CatalogQuery(NRLQueryPropertyInterface):
         """
         if not self.flag.model_selected or model in self.__BAD_USER_ENTRY:
             self.flag.model_selected = False
-            self.catalog_prop.model = ['']
+            self.catalog_prop.model = []
             return
         for mdl in model:
             self.catalog_prop.model.append(mdl)
@@ -291,11 +304,7 @@ class CatalogQuery(NRLQueryPropertyInterface):
         if not self.flag.model_selected:
             return ''
         str_model = ','.join(self.catalog_prop.model)
-        if (not self.flag.model_selected and
-                not self.flag.manufacturer_selected):
-            return f'model={str_model}'
-        else:
-            return f'&model={str_model}'
+        return f'model={str_model}'
 
     def __validate_level(self, level: str) -> None:
         """
@@ -303,27 +312,23 @@ class CatalogQuery(NRLQueryPropertyInterface):
         :param level: The user entry for the level value
         :return: None
         """
-        if level not in VALID_LEVEL:
-            if self.error_handler:
+        if level.lower() not in VALID_LEVEL:
+            if self.__error_handler:
                 # TODO: Replace the print statement with logging
                 print(f"Invalid entry: {level} for the level attribute.")
-                print("The default value, element is chosen")
-                self.catalog_prop.level = 'element'
+                print("The default value, configuration is chosen")
+                self.catalog_prop.level = 'configuration'
             else:
                 raise ValueError(f"Invalid entry: {level} for the level.")
-        self.catalog_prop.level = level
+        else:
+            self.catalog_prop.level = level.lower()
 
     def __build_level(self) -> str:
         """
         Return the string presentation of the level
         :return: The string presentation of the level
         """
-        if (not self.flag.element_selected and
-            not self.flag.manufacturer_selected and
-                not self.flag.model_selected):
-            return f'level={self.catalog_prop.level}'
-        else:
-            return f'&level={self.catalog_prop.level}'
+        return f'level={self.catalog_prop.level}'
 
     def __validate_output_format(self, output_format: str) -> None:
         """
@@ -331,8 +336,8 @@ class CatalogQuery(NRLQueryPropertyInterface):
         :param output_format: The user entry for the output format value
         :return: None
         """
-        if output_format in VALID_OUTPUT_FORMAT:
-            self.catalog_prop.output_format = output_format
+        if output_format.lower() in VALID_OUTPUT_FORMAT:
+            self.catalog_prop.output_format = output_format.lower()
         else:
             print(f"The value, {output_format}, is not a valid input for the "
                   f"format. The default format, xml, chosen.")
@@ -342,7 +347,7 @@ class CatalogQuery(NRLQueryPropertyInterface):
         Return the string presentation of the output format
         :return: The string presentation of the output format
         """
-        return f'&format={self.catalog_prop.output_format}'
+        return f'format={self.catalog_prop.output_format}'
 
     def __validate_updated_since(self, updated_since: datetime) -> None:
         """
@@ -361,4 +366,4 @@ class CatalogQuery(NRLQueryPropertyInterface):
         """
         if not self.flag.updated_since_selected:
             return ''
-        return f'&updatedsince={self.catalog_prop.updated_since}'
+        return f'updatedsince={self.catalog_prop.updated_since}'
