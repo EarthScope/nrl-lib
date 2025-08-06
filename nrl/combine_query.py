@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class CombineFlags:
+class _CombineFlags:
     # True if instconfig is selected
     instconfig_selected: bool = True
     # Element/Manufacturer/Model
@@ -42,7 +42,7 @@ class CombineFlags:
 
 
 @dataclass
-class Epoch:
+class _Epoch:
     network: Optional[str] = field(default=None)
     station: Optional[str] = field(default=None)
     location: Optional[str] = field(default=None)
@@ -52,7 +52,7 @@ class Epoch:
 
 
 @dataclass
-class CombineProperty:
+class _CombineProperty:
     element: list = field(default_factory=list)
     manufacturer: list = field(default_factory=list)
     model: list = field(default_factory=list)
@@ -60,7 +60,7 @@ class CombineProperty:
     updated_since: datetime = datetime.now()
     output_format: str = 'resp'
     nodata: int = 404
-    epoch: Epoch = field(default_factory=Epoch)
+    epoch: _Epoch = field(default_factory=_Epoch)
 
     def reset_combine_prop(self):
         self.element = list()
@@ -70,7 +70,7 @@ class CombineProperty:
         self.updated_since = datetime.now()
         self.output_format: str = 'resp'
         self.nodata: int = 404
-        self.epoch = Epoch()
+        self.epoch = _Epoch()
 
 
 BAD_USER_ENTRY = ['', None]
@@ -82,8 +82,8 @@ class CombineQuery(NRLQueryPropertyInterface):
     """
     def __init__(self):
         super().__init__()
-        self.combine_prop = CombineProperty()
-        self.flag = CombineFlags()
+        self.combine_prop = _CombineProperty()
+        self.flag = _CombineFlags()
         self.__error_handler = True
 
     def __reset_defaults(self) -> None:
@@ -92,7 +92,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :return: None
         """
         self.combine_prop.reset_combine_prop()
-        self.flag = CombineFlags()
+        self.flag = _CombineFlags()
 
     def set_error_handler(self, status: bool) -> None:
         """

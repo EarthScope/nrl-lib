@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class PrefixLookupProperty:
+class _PrefixLookupProperty:
     output_format: str = 'xml'
     nodata: int = 404
 
@@ -27,7 +27,7 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
     """
     def __init__(self):
         super().__init__()
-        self.prefix_prop = PrefixLookupProperty()
+        self.prefix_prop = _PrefixLookupProperty()
         self.__error_handler = True
 
     def __reset_defaults(self) -> None:
@@ -35,7 +35,7 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         Reset PrefixLookupQuery variables to their default values
         :return: None
         """
-        self.prefix_prop = PrefixLookupProperty()
+        self.prefix_prop = _PrefixLookupProperty()
 
     def set_error_handler(self, status: bool) -> None:
         """
@@ -81,8 +81,8 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         :return: None
         """
         if user_input is None:
-            self.prefix_prop = PrefixLookupProperty(output_format="xml",
-                                                    nodata=404)
+            self.prefix_prop = _PrefixLookupProperty(output_format="xml",
+                                                     nodata=404)
         if user_input is not None and len(user_input) != 2:
             if self.__error_handler:
                 logger.error("The query, prefix_lookup, accepts two entries, "
