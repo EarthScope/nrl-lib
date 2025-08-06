@@ -2,6 +2,7 @@
 This module the functionality for building URLs. The URL that can be sent to
 NRL web service to receive the desired response.
 """
+import logging
 from typing import NamedTuple
 from urllib.parse import urlunsplit
 
@@ -9,6 +10,8 @@ NETLOC = 'service.iris.edu'
 HOSTNAME = 'service.iris.edu'
 PATH = '/irisws/nrl/1/'
 SCHEME = 'http'
+
+logger = logging.getLogger(__name__)
 
 
 class Components(NamedTuple):
@@ -35,12 +38,14 @@ class URLBuild:
         self.fragment = ''
         # namedtuple to match the internal signature of urlunparse
         self.nrl_components = self.__build_nrl_components()
+        logger.debug("URLBuild initialized.")
 
     def __reset_defaults(self):
         """
         Reset the instance of the URLBuild class
         :return: None
         """
+        logger.debug("Resetting URLBuild defaults.")
         self.scheme: str = SCHEME
         self.netloc: str = NETLOC
         self.params = None
@@ -59,6 +64,7 @@ class URLBuild:
         :return: The URL that can be sent to the NRL web service.
         :rtype: str
         """
+        logger.debug(f"Building URL with query string: {nrl_query}")
         self.__reset_defaults()
         self.__set_nrl_query(nrl_query)
         # There is small issue with the way web service handles url. The
@@ -69,9 +75,12 @@ class URLBuild:
         query_type = self.query.split('?')[0]
         self.path += query_type
         self.query = self.query.split('?')[1]
+        logger.debug(f"URL path set to: {self.path}")
+        logger.debug(f"URL query part set to: {self.query}")
         # the Structure of the url is like:
         # nrl_url = scheme://netloc/path;parameters?query#fragment
         nrl_url = urlunsplit(self.__build_nrl_components())
+        logger.info(f"Final built URL: {nrl_url}")
         return str(nrl_url)
 
     def __set_nrl_query(self, nrl_query: str) -> None:
@@ -84,8 +93,10 @@ class URLBuild:
         :return: None
         """
         if nrl_query == '':
+            logger.error("Attempted to set an empty query string.")
             raise ValueError('Query cannot be empty!')
         self.query = nrl_query
+        logger.debug(f"Set nrl_query to: {nrl_query}")
 
     def __build_nrl_components(self) -> Components:
         """
@@ -99,5 +110,6 @@ class URLBuild:
             path=self.path,
             query=self.query,
             fragment=self.fragment)
+        logger.debug(f"Built URL components: {nrl_components}")
 
         return nrl_components

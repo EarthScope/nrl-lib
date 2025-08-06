@@ -5,6 +5,7 @@ End users are mainly need to deal with this module to communicate with the NRL
 web service.
 """
 import json
+import logging
 import os
 from datetime import datetime
 
@@ -18,6 +19,7 @@ from nrl.catalog_query import CatalogQuery
 from nrl.prefix_lookup_query import PrefixLookupQuery
 
 SUPPORTED_QUERY = ['combine', 'catalog', 'prefix-lookup']
+logger = logging.getLogger(__name__)
 
 
 class NRLQuery:
@@ -34,12 +36,14 @@ class NRLQuery:
         self.combine_query = CombineQuery()
         self.catalog_query = CatalogQuery()
         self.prefix_lookup_query = PrefixLookupQuery()
+        logger.info("NRLQuery initialized.")
 
     def __reset_defaults(self):
         """
         Reset the instance values of the NRLQuery class
         :return: None
         """
+        logger.debug("Resetting NRLQuery defaults.")
         self.url = ''
         self.response = None
         self.nrl_property = dict()
@@ -127,19 +131,25 @@ class NRLQuery:
         :return: The response from the NRL web service
         :rtype: requests.Response
         """
+        logger.info(f"Received nrl_query request for type: {query_type}")
+        logger.debug(f"Query properties: {nrl_query_property}")
         self.__reset_defaults()
         self.nrl_property = nrl_query_property
         if query_type not in SUPPORTED_QUERY:
+            logger.error(f'Invalid query type: {query_type}')
             raise ValueError(f'The query type {query_type} is not a valid '
                              f'type. NRL web service supports /catalog, '
                              f'/prefix-lookup, and /combine types ')
         if query_type == 'combine':
+            logger.info("Processing 'combine' query.")
             combine_query_response = self.__combine_query(self.nrl_property)
             return combine_query_response
         elif query_type == 'catalog':
+            logger.info("Processing 'catalog' query.")
             catalog_query_response = self.__catalog_query(self.nrl_property)
             return catalog_query_response
         elif query_type == 'prefix-lookup':
+            logger.info("Processing 'prefix-lookup' query.")
             prefix_lookup_query_response = self.__prefix_lookup_query(
                 self.nrl_property)
             return prefix_lookup_query_response
@@ -157,9 +167,11 @@ class NRLQuery:
         :rtype: requests.Response
         """
         # Create the query section of the URL
+        logger.debug("Building combine query string.")
         comb_query = self.combine_query.build_query(combine_query_property)
 
         # Build the entire URL
+        logger.debug(f"Assembling URL with query: {comb_query}")
         comb_url = self.__assemble_url(comb_query)
         # Send the request to the NRL web service
         nrl_response = NRLQuery.__send_query(comb_url)
@@ -177,9 +189,11 @@ class NRLQuery:
         :rtype: requests.Response
         """
         # Create the query section of the URL
+        logger.debug("Building catalog query string.")
         cat_query = self.catalog_query.build_query(catalog_query_property)
 
         # Build the entire URL
+        logger.debug(f"Assembling URL with query: {cat_query}")
         cat_url = self.__assemble_url(cat_query)
 
         # Send the request to the NRL web service
@@ -198,10 +212,12 @@ class NRLQuery:
         :rtype: requests.Response
         """
         # Create the query section of the URL
+        logger.debug("Building prefix-lookup query string.")
         prefix_lookup_query = self.prefix_lookup_query.build_query(
             prefix_lookup_query_property)
 
         # Build the entire URL
+        logger.debug(f"Assembling URL with query: {prefix_lookup_query}")
         prefix_url = self.__assemble_url(prefix_lookup_query)
 
         # Send the request to the NRL web service
@@ -217,6 +233,7 @@ class NRLQuery:
         :rtype: str
         """
         final_url = self.url_builder.build_url(query_str)
+        logger.info(f"Assembled URL: {final_url}")
         return final_url
 
     @staticmethod
@@ -227,8 +244,10 @@ class NRLQuery:
         :return: The response file from the NRL web service
         """
         # Send a GET request to the URL
+        logger.info(f"Sending GET request to {url}")
         response = requests.get(url, stream=True)
         # Raise an exception for 4xx or 5xx status code
+        logger.info(f"Received response with status code: {response.status_code}")
         response.raise_for_status()
         return response
 
@@ -243,28 +262,38 @@ class NRLQuery:
         :type dl_path: pathlib.Path
         :return: None
         """
+        logger.info("Attempting to write response to file.")
         if dl_path is None:
             dl_path = NRLQuery.__path_home_directory()
+            logger.warning(f'No path is chosen to download response files. the default'
+                           f' path, {dl_path}, has been selected.')
             print(f'No path is chosen to download response files. the default'
                   f' path, {dl_path}, has been selected.')
         else:
+            logger.debug(f"Ensuring download directory exists: {dl_path}")
             Path(dl_path).mkdir(parents=True, exist_ok=True)
         # If no content is return from the remote server then no file name can
         # be extracted from the headers
         cont_disposition, file_exten, file_name = (
             NRLQuery.__get_meta_data(response))
         # Rename the file to solve the disappearing files problem.
+        logger.debug(f"Original filename from header: {file_name}")
         file_name = NRLQuery.__rename_file_name_time_stamp(file_name)
+        logger.info(f"New filename with timestamp: {file_name}")
         destination = dl_path / file_name
+        logger.info(f"File will be saved to: {destination}")
         # Try to save the file based on the format.
         # Downloading zip or xml files need special attention -> byte
         if file_exten in ['zip', 'xml']:
+            logger.debug("Writing as zip/xml file.")
             NRLQuery.__write_zip_xml_file(destination, response)
         # Handle the json format
         elif file_exten == 'json':
+            logger.debug("Writing as json file.")
             NRLQuery.__write_json_file(destination, response)
         # Handle the resp format
         else:
+            logger.debug("Writing as resp/text file.")
             NRLQuery.__write_resp_files(destination, response)
 
     @staticmethod
@@ -275,6 +304,7 @@ class NRLQuery:
         :rtype: Path
         """
         default_path = (Path.home() / '.nrl')
+        logger.debug(f"Default download path is {default_path}")
         default_path.mkdir(parents=True, exist_ok=True)
         return default_path
 
@@ -306,6 +336,7 @@ class NRLQuery:
         else:
             exten = '.'.join(split_file_name[-2:])
         new_file_name = f"{prefix}-{time_stamp}.{exten}"
+        logger.debug(f"Renamed file from '{file_name}' to '{new_file_name}'")
         return new_file_name
 
     @staticmethod
@@ -325,9 +356,12 @@ class NRLQuery:
         match = re.match(r'([\w-]+)_\d{4}-\d{2}-\d{2}T.*(\.\w+)$', file_name)
 
         if match:
-            return match.group(1)
+            prefix = match.group(1)
+            logger.debug(f"Extracted prefix '{prefix}' from filename '{file_name}'")
+            return prefix
         else:
             # or you could return a default value or raise an exception
+            logger.warning(f"Could not extract prefix from filename '{file_name}'")
             return ''
 
     @staticmethod
@@ -340,7 +374,9 @@ class NRLQuery:
             # Extract file name
             file_name = ((cont_disposition.split('=')[-1].replace('"', ''))
                          .strip())
+            logger.debug(f"Extracted metadata: filename='{file_name}', extension='{file_exten}'")
         except AttributeError as e:
+            logger.error(f"Could not get metadata from response headers: {e}")
             print(f'Problem downloading file: {e}')
             return ()
 
@@ -350,38 +386,47 @@ class NRLQuery:
     def __write_resp_files(destination: Path, data: requests.Response) -> bool:
         try:
             # time.sleep(1)
+            logger.debug(f"Writing resp file to {destination}")
             with open(destination, 'w', encoding='utf-8') as out:
                 for line in data.iter_lines(decode_unicode=True):
                     out.write(line + '\n')
         except ValueError as e:
+            logger.error(f"Error writing resp file to {destination}: {e}")
             print("Error downloading file", e)
             return False
+        logger.info(f"Successfully wrote file to {destination}")
         return True
 
     @staticmethod
     def __write_json_file(destination: Path, data: requests.Response) -> bool:
         try:
+            logger.debug(f"Writing json file to {destination}")
             with open(destination, 'w', encoding='utf-8') as out:
                 json.dump(data.json(), out, ensure_ascii=False,
                           indent=4)
                 out.flush()
                 os.fsync(out.fileno())
         except ValueError as e:
+            logger.error(f"Error writing json file to {destination}: {e}")
             print('Error downloading file: ', e)
             return False
+        logger.info(f"Successfully wrote file to {destination}")
         return True
 
     @staticmethod
     def __write_zip_xml_file(destination: Path, data: requests.Response) ->\
             bool:
         try:
+            logger.debug(f"Writing binary file (zip/xml) to {destination}")
             with open(destination, 'wb') as out:
                 for chunk in data.iter_content(chunk_size=8192):
                     if chunk:
                         out.write(chunk)
         except requests.exceptions.RequestException as e:
+            logger.error(f"Error writing binary file to {destination}: {e}")
             print("Error download file", e)
             return False
+        logger.info(f"Successfully wrote file to {destination}")
         return True
 
     def set_error_handler(self, status: Optional[Union[dict, bool]] = True):
@@ -390,6 +435,7 @@ class NRLQuery:
         :param status: Boolean to set all, or dict for per-query control.
         :return: None
         """
+        logger.info(f"Setting error handler status: {status}")
         if isinstance(status, dict):
             if 'combine' in status:
                 self.combine_query.set_error_handler(status['combine'])
