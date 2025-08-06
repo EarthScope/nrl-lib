@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class CatalogFlags:
+class _CatalogFlags:
     updated_since_selected: bool = True
     element_selected: bool = True
     manufacturer_selected: bool = True
@@ -31,7 +31,7 @@ class CatalogFlags:
 
 
 @dataclass
-class CatalogProperty:
+class _CatalogProperty:
     element: list = field(default_factory=list)
     manufacturer: list = field(default_factory=list)
     model: list = field(default_factory=list)
@@ -49,8 +49,8 @@ class CatalogQuery(NRLQueryPropertyInterface):
 
     def __init__(self):
         super().__init__()
-        self.catalog_prop = CatalogProperty()
-        self.flag = CatalogFlags()
+        self.catalog_prop = _CatalogProperty()
+        self.flag = _CatalogFlags()
         self.__error_handler = True
 
     def __reset_defaults(self) -> None:
@@ -58,8 +58,8 @@ class CatalogQuery(NRLQueryPropertyInterface):
         Reset CatalogQuery variables to their default values
         :return: None
         """
-        self.catalog_prop = CatalogProperty()
-        self.flag = CatalogFlags()
+        self.catalog_prop = _CatalogProperty()
+        self.flag = _CatalogFlags()
 
     def set_error_handler(self, status: bool = True) -> None:
         """
