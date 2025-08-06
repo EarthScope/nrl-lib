@@ -67,10 +67,12 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         construct the prefix lookup query. The string format of the output will
         be /prefix-lookup? [format-options] [nodata-options]
         """  # noqa: E501
+        logger.info(f"Building prefix lookup query with input: {nrl_property}")
         self.__build_prefix_lookup_property(nrl_property)
         prefix_query = (f"prefix-lookup?format="
                         f"{self.prefix_prop.output_format}&nodata="
                         f"{self.prefix_prop.nodata}")
+        logger.debug(f"Built prefix lookup query string: {prefix_query}")
         return prefix_query
 
     def __build_prefix_lookup_property(self, user_input: dict) -> None:
@@ -80,7 +82,9 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         "format" and "nodata", and their respective values.
         :return: None
         """
+        logger.debug(f"Validating user input for prefix lookup: {user_input}")
         if user_input is None:
+            logger.info("User input is None, using default values.")
             self.prefix_prop = _PrefixLookupProperty(output_format="xml",
                                                      nodata=404)
         if user_input is not None and len(user_input) != 2:
@@ -99,15 +103,16 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
                                  f"{len(user_input)}")
 
         for key, value in user_input.items():
+            logger.debug(f"Processing key: {key}, value: {value}")
             if key == 'format':
                 self.__validate_output_format(value)
             elif key == 'nodata':
                 self.__validate_input_nodata(value)
             else:
                 if self.__error_handler:
-                    logging.error(f'The key, {key} is not a valid entry')
+                    logger.error(f'The key, {key} is not a valid entry')
                 else:
-                    logging.critical(f'The key, {key} is not a valid entry')
+                    logger.critical(f'The key, {key} is not a valid entry')
                     raise ValueError(f'The key, {key} is not a valid entry')
 
     def __validate_output_format(self, output_format: str) -> None:
@@ -117,12 +122,14 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         :param output_format: user entry for the output format
         :return: None
         """
+        logger.debug(f"Validating output format: {output_format}")
         if output_format in VALID_OUTPUT_FORMAT:
             self.prefix_prop.output_format = output_format
+            logger.info(f"Set output format to: {output_format}")
         else:
-            logging.warning(f"The value, {output_format}, is not a valid input"
-                            f" for the format. The default format, xml, "
-                            f"chosen.")
+            logger.warning(f"The value, {output_format}, is not a valid input"
+                           f" for the format. The default format, xml, chosen"
+                           f".")
             print(f"The value, {output_format}, is not a valid input for the "
                   f"format. The default format, xml, chosen.")
 
@@ -132,11 +139,13 @@ class PrefixLookupQuery(NRLQueryPropertyInterface):
         :param nodata: User entry for the nodata value
         :return: None
         """
+        logger.debug(f"Validating nodata value: {nodata}")
         if nodata in VALID_NODATA:
             self.prefix_prop.nodata = nodata
+            logger.info(f"Set nodata to: {nodata}")
         else:
-            logging.warning(f"The value, {nodata}, is not a valid input for "
-                            f"the nodata. The default nodata value, 404, "
-                            f"chosen")
+            logger.warning(f"The value, {nodata}, is not a valid input for "
+                           f"the nodata. The default nodata value, 404, "
+                           f"chosen.")
             print(f"The value, {nodata}, is not a valid input for the "
                   f"nodata. The default nodata value, 404, chosen")

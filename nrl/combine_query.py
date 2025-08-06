@@ -136,6 +136,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param nrl_property: A dictionary that contains keys, "element", "manufacturer", "model", "instconfig", "updated_since"  "format", "nodata", and "epoch", and their respective values.
         :return: The query string part of the final URL that will be used to construct the combine query. The string format of the output will be: combine? (selection-options) [epoch-options] [format-options] [nodata-options] [administrative-options]
         """  # noqa: E501,W605,W293
+        logger.info(f"Building combine query with input: {nrl_property}")
         # Make sure all variables are set to default
         self.__reset_defaults()
         if ('instconfig' in nrl_property and
@@ -144,6 +145,7 @@ class CombineQuery(NRLQueryPropertyInterface):
             self.flag.element_selected = False
             self.flag.manufacturer_selected = False
             self.flag.model_selected = False
+            logger.debug("Instrument configuration selected, disabling element/manufacturer/model.")
         else:
             self.flag.instconfig_selected = False
         self.__build_combine_query(nrl_property)
@@ -153,22 +155,28 @@ class CombineQuery(NRLQueryPropertyInterface):
 
         # If instrument configuration is chosen
         if self.flag.instconfig_selected:
+            logger.debug("Building instconfig parameter.")
             params.append(self.__build_instconfig())
         # If Element/Manufacturer/Model is chosen
         else:
             if self.flag.element_selected and self.combine_prop.element:
+                logger.debug("Building element parameter.")
                 params.append(self.__build_element())
             if self.flag.manufacturer_selected and self.combine_prop.manufacturer:
+                logger.debug("Building manufacturer parameter.")
                 params.append(self.__build_manufacturer())
             if self.flag.model_selected and self.combine_prop.model:
+                logger.debug("Building model parameter.")
                 params.append(self.__build_model())
 
         # Add common parameters
         if self.flag.updated_since_selected:
+            logger.debug("Building updated_since parameter.")
             params.append(self.__build_updated_since())
 
         # Add epoch parameters if selected
         if self.flag.epoch_selected:
+            logger.debug("Building epoch parameters.")
             epoch_params = self.__build_epoch()
             if epoch_params:
                 params.extend(epoch_params.split('&')[1:]
@@ -180,7 +188,9 @@ class CombineQuery(NRLQueryPropertyInterface):
         params.append(f"nodata={self.combine_prop.nodata}")
 
         # Build the final query
-        return f"combine?{params[0]}" + ''.join(f"&{param}" for param in params[1:] if param)
+        query_str = f"combine?{params[0]}" + ''.join(f"&{param}" for param in params[1:] if param)
+        logger.info(f"Built combine query string: {query_str}")
+        return query_str
 
     def __build_combine_query(self, user_input: dict) -> None:
         """
@@ -190,13 +200,14 @@ class CombineQuery(NRLQueryPropertyInterface):
         "format", "nodata", and "epoch", and their respective values.
         :return: None
         """
+        logger.debug(f"Validating user input for combine query: {user_input}")
         if user_input is None:
             if self.__error_handler:
-                logging.error("No data provided for the combine query! The "
-                              "input dictionary must contain the following "
-                              "keys and values: element, manufacturer, model,"
-                              " instconfig, updated_since  format, nodata, and"
-                              " epoch")
+                logger.error("No data provided for the combine query! The "
+                             "input dictionary must contain the following "
+                             "keys and values: element, manufacturer, model,"
+                             " instconfig, updated_since  format, nodata, and"
+                             " epoch")
             else:
                 raise ValueError("No data provided for the combine query! The "
                                  "input dictionary must contain the following "
@@ -224,17 +235,18 @@ class CombineQuery(NRLQueryPropertyInterface):
                 not self.flag.manufacturer_selected and
                 not self.flag.model_selected):
             if self.__error_handler:
-                logging.error("No entry provided for neither instrument "
-                              "configuration nor element|manufacturer|model. "
-                              "The query has been ignored")
+                logger.error("No entry provided for neither instrument "
+                             "configuration nor element|manufacturer|model. "
+                             "The query has been ignored")
             else:
-                logging.critical('You must provide a value for the instconfig'
-                                 ' parameter (non-wildcard). Alternatively '
-                                 'provide element|manufacturer|model '
-                                 'parameters (wildcards allowed)')
+                logger.critical('You must provide a value for the instconfig'
+                                ' parameter (non-wildcard). Alternatively '
+                                'provide element|manufacturer|model '
+                                'parameters (wildcards allowed)')
                 raise ValueError
         # Go through the user entry and address each one separately
         for key, value in user_input.items():
+            logger.debug(f"Processing key: {key}, value: {value}")
             if key == 'element':
                 self.__validate_element(value)
             elif key == 'manufacturer':
@@ -258,10 +270,12 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param nodata: User entry for the nodata value
         :return: None
         """
+        logger.debug(f"Validating nodata value: {nodata}")
         if nodata in VALID_NODATA:
             self.combine_prop.nodata = nodata
+            logger.info(f"Set nodata to: {nodata}")
         else:
-            logging.warning(
+            logger.warning(
                 f"The value, {nodata}, is not a valid input for the nodata. "
                 f"The default nodata value, 204, is chosen."
                 )
@@ -280,6 +294,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param element: The user entry for the list of elements.
         :return: None
         """
+        logger.debug(f"Validating element value: {element}")
         # If Instrument configuration is added to the combine query then we
         # don't need the element key and value
         if self.flag.instconfig_selected:
@@ -300,11 +315,11 @@ class CombineQuery(NRLQueryPropertyInterface):
                 self.combine_prop.element.append(item)
             else:
                 if self.__error_handler:
-                    logging.error(f'The entry {item} for the element input is '
-                                  f'not valid and will be ignored.')
+                    logger.error(f'The entry {item} for the element input is '
+                                 f'not valid and will be ignored.')
                 else:
-                    logging.critical(f"The entry '{item}' is not a valid input"
-                                     f" for the element!")
+                    logger.critical(f"The entry '{item}' is not a valid input"
+                                    f" for the element!")
                     raise ValueError(f"The entry '{item}' is not a valid input"
                                      f" for the element!")
 
@@ -330,6 +345,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param manufacturer: The user entry for the manufacturer value
         :return: None
         """
+        logger.debug(f"Validating manufacturer value: {manufacturer}")
         # If Instrument configuration is added to the combine query then we
         # don't need the manufacturer key and value
         if self.flag.instconfig_selected:
@@ -368,6 +384,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param model: The user entry for the model value
         :return: None
         """
+        logger.debug(f"Validating model value: {model}")
         # If Instrument configuration is added to the combine query then we
         # don't need the model key and value
         if self.flag.instconfig_selected:
@@ -414,6 +431,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         configuration(s)
         :return: None
         """
+        logger.debug(f"Validating instconfig value: {instconfig}")
         delimiters = [':', ',']
         if not self.flag.instconfig_selected:
             return
@@ -473,6 +491,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param updated_since: The user entry for the updated_since value
         :return: None
         """
+        logger.debug(f"Validating updated_since value: {updated_since}")
         if updated_since is None:
             self.flag.updated_since_selected = False
             return
@@ -494,12 +513,14 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param output_format: The user entry for the output format value
         :return: None
         """
+        logger.debug(f"Validating output format: {output_format}")
         if output_format.lower() in VALID_COMBINE_OUTPUT_FORMATS:
             self.combine_prop.output_format = output_format.lower()
+            logger.info(f"Set output format to: {output_format.lower()}")
         else:
-            logging.warning(f"The value, {output_format}, is not a valid input"
-                            f" for the format. The default format, stationxml, "
-                            f"chosen.")
+            logger.warning(f"The value, {output_format}, is not a valid input"
+                           f" for the format. The default format, stationxml, "
+                           f"chosen.")
             self.combine_prop.output_format = 'stationxml'
 
     def __build_output_format(self) -> str:
@@ -520,6 +541,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         respective values.
         :return: None
         """
+        logger.debug(f"Validating epoch value: {epoch}")
         if epoch is None or not self.flag.epoch_selected:
             return
         if 'network' not in epoch:
@@ -535,6 +557,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         if 'end_time' not in epoch:
             self.flag.end_time_selected = False
         for key, value in epoch.items():
+            logger.debug(f"Processing epoch key: {key}, value: {value}")
             if key == 'network':
                 self.__validate_network(value)
             elif key == 'station':
@@ -549,12 +572,12 @@ class CombineQuery(NRLQueryPropertyInterface):
                 self.__validate_end_time(value)
             else:
                 if self.__error_handler:
-                    logging.error(f'The pair key, {key}, -> value, {value}, is'
-                                  f' not a valid entry for the Epoch. The '
-                                  f'entry is ignored.')
+                    logger.error(f'The pair key, {key}, -> value, {value}, is'
+                                 f' not a valid entry for the Epoch. The '
+                                 f'entry is ignored.')
                 else:
-                    logging.critical(f'The pair key, {key}, -> value, {value},'
-                                     f' is not a valid entry for the Epoch')
+                    logger.critical(f'The pair key, {key}, -> value, {value},'
+                                    f' is not a valid entry for the Epoch')
                     raise ValueError(f'The pair key, {key}, -> value, {value},'
                                      f' is not a valid entry for the Epoch')
 
@@ -593,18 +616,19 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param network: The user entry for the network value
         :return: None
         """
+        logger.debug(f"Validating network value: {network}")
         # Network field can be left empty in the NRL web service
         if network in BAD_USER_ENTRY or not self.flag.network_selected:
             self.flag.network_selected = False
             return
         if len(network) != 2:
             if self.__error_handler:
-                logging.error(f"Network codes must be represented with two "
-                              f"letters. The invalid network code, {network}, "
-                              f"is ignored.")
+                logger.error(f"Network codes must be represented with two "
+                             f"letters. The invalid network code, {network}, "
+                             f"is ignored.")
             else:
-                logging.critical(f"The value for the network, {network}, is "
-                                 f"not a valid input.")
+                logger.critical(f"The value for the network, {network}, is "
+                                f"not a valid input.")
                 raise ValueError(f"The value for the network, {network}, is "
                                  f"not a valid input.")
         self.combine_prop.epoch.network = network
@@ -624,6 +648,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param station: The user entry for the station code
         :return: None
         """
+        logger.debug(f"Validating station value: {station}")
         if station in BAD_USER_ENTRY or not self.flag.station_selected:
             self.flag.station_selected = False
             return
@@ -644,6 +669,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param location: The user entry for the location code
         :return: None
         """
+        logger.debug(f"Validating location value: {location}")
         if location in BAD_USER_ENTRY or not self.flag.location_selected:
             self.flag.location_selected = False
             return
@@ -664,6 +690,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param channel: The user entry for the channel code
         :return: None
         """
+        logger.debug(f"Validating channel value: {channel}")
         if channel in BAD_USER_ENTRY or not self.flag.channel_selected:
             self.flag.channel_selected = False
             return
@@ -684,6 +711,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param start_time: The user entry for the start time value
         :return: None
         """
+        logger.debug(f"Validating start_time value: {start_time}")
         # Start time can be ignored
         if start_time in BAD_USER_ENTRY:
             self.flag.start_time_selected = False
@@ -707,6 +735,7 @@ class CombineQuery(NRLQueryPropertyInterface):
         :param end_time: the user entry for the end time value
         :return: None
         """
+        logger.debug(f"Validating end_time value: {end_time}")
         # End time can be ignored
         if end_time in BAD_USER_ENTRY:
             self.flag.end_time_selected = False
