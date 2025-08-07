@@ -1,6 +1,6 @@
 package:
   name: nrl
-  version: 2024.1.0.0
+  version: 2025.1.0.0
 
 source:
   path: ../
@@ -25,8 +25,8 @@ test:
     - python -m unittest
 
 about:
-  home: https://www.passcal.nmt.edu/content/software-resources
-  dev_url: https://git.passcal.nmt.edu/software_public/nrl
+  home: https://epic.earthscope.org/content/software-resources
+  dev_url: https://gitlab.com/earthscope/public/epic/nrl
   license: GPLv3
   license_file: LICENSE
   summary: Library to access the NRL v2 web service.

@@ -14,7 +14,7 @@ with open('HISTORY.rst', 'rt') as history_file:
 
 setup(
     author="EPIC",
-    author_email='software-support@passcal.nmt.edu',
+    author_email='software@earthscope.org',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -45,7 +45,7 @@ setup(
     keywords='nrl',
     name='nrl',
     packages=find_packages(),
-    url='https://git.passcal.nmt.edu/software_public/nrl',
-    version='2024.1.0.0',
+    url='https://gitlab.com/earthscope/public/epic/nrl',
+    version='2025.1.0.0',
     zip_safe=False,
 )
