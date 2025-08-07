@@ -11,7 +11,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://git.passcal.nmt.edu/software_public/nrl/issues
+Report bugs at https://gitlab.com/earthscope/public/epic/nrl/issues.
 
 If you are reporting a bug, please include:
 
@@ -43,7 +43,7 @@ Submit Feedback
 ~~~~~~~~~~~~~~~
 
 The best way to send feedback is to file an issue at
-https://git.passcal.nmt.edu/software_public/nrl/issues.
+https://gitlab.com/earthscope/public/epic/nrl/issues.
 
 If you are proposing a feature:
 
@@ -58,7 +58,7 @@ Ready to contribute? Here's how to set up `NRL` for local development.
 
 1. Clone the `NRL` repo:
 
- * $ git clone https://git.passcal.nmt.edu/software_public/nrl.git
+ * $ git clone git@gitlab.com:earthscope/public/epic/nrl.git
 
 2. Install your local copy:
 
