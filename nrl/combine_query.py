@@ -145,7 +145,8 @@ class CombineQuery(NRLQueryPropertyInterface):
             self.flag.element_selected = False
             self.flag.manufacturer_selected = False
             self.flag.model_selected = False
-            logger.debug("Instrument configuration selected, disabling element/manufacturer/model.")
+            logger.debug("Instrument configuration selected, disabling "
+                         "element/manufacturer/model.")
         else:
             self.flag.instconfig_selected = False
         self.__build_combine_query(nrl_property)
@@ -162,7 +163,8 @@ class CombineQuery(NRLQueryPropertyInterface):
             if self.flag.element_selected and self.combine_prop.element:
                 logger.debug("Building element parameter.")
                 params.append(self.__build_element())
-            if self.flag.manufacturer_selected and self.combine_prop.manufacturer:
+            if (self.flag.manufacturer_selected and
+                    self.combine_prop.manufacturer):
                 logger.debug("Building manufacturer parameter.")
                 params.append(self.__build_manufacturer())
             if self.flag.model_selected and self.combine_prop.model:
@@ -228,22 +230,67 @@ class CombineQuery(NRLQueryPropertyInterface):
         if 'epoch' not in user_input:
             self.flag.epoch_selected = False
 
-        # If the user has neither provide the instconfig nor
-        # element/manufacturer/model then raise valueerror
-        if (not self.flag.instconfig_selected and
-                not self.flag.element_selected and
-                not self.flag.manufacturer_selected and
-                not self.flag.model_selected):
+        # --- REQUIREMENT 1 & 2 ENFORCEMENT ---
+        # After parsing flags, check for instconfig and element/manufacturer/model
+        instconfig_val = user_input.get('instconfig', None)
+        element_val = user_input.get('element', None)
+        manufacturer_val = user_input.get('manufacturer', None)
+        model_val = user_input.get('model', None)
+
+        # Helper to check if a value is "present" (including wildcards)
+        def _has_value(val):
+            if val is None:
+                return False
+            if isinstance(val, str):
+                return bool(val.strip())
+            if isinstance(val, list):
+                return any(str(v).strip() for v in val)
+            return False
+
+        # Helper to check if a value is a wildcard
+        def _is_wildcard(val):
+            if isinstance(val, str):
+                return '*' in val or '?' in val
+            if isinstance(val, list):
+                return any(('*' in str(v)) or ('?' in str(v)) for v in val)
+            return False
+
+        # Check if instconfig is empty or not present
+        instconfig_empty = not _has_value(instconfig_val)
+
+        # Check if all element/manufacturer/model are empty or missing
+        all_empty = (not _has_value(element_val)
+                     and not _has_value(manufacturer_val)
+                     and not _has_value(model_val))
+        # If no instconfig and all element/manufacturer/model are empty, raise or ignore error
+        if instconfig_empty and all_empty:
+            msg = ("You must provide either a non-empty instconfig or at least one of "
+                   "element, manufacturer, or model (can be a wildcard).")
             if self.__error_handler:
-                logger.error("No entry provided for neither instrument "
-                             "configuration nor element|manufacturer|model. "
-                             "The query has been ignored")
+                logger.error(msg + " Ignoring query.")
+                return
             else:
-                logger.critical('You must provide a value for the instconfig'
-                                ' parameter (non-wildcard). Alternatively '
-                                'provide element|manufacturer|model '
-                                'parameters (wildcards allowed)')
-                raise ValueError
+                logger.critical(msg)
+                raise ValueError(msg)
+
+        # If no instconfig, at least one of element/manufacturer/model must have a value (including wildcards)
+        if instconfig_empty:
+            has_valid = (
+                _has_value(element_val) or _has_value(manufacturer_val) or _has_value(model_val)
+            )
+            has_wildcard = (
+                _is_wildcard(element_val) or _is_wildcard(manufacturer_val) or _is_wildcard(model_val)
+            )
+            if not (has_valid or has_wildcard):
+                msg = ("If instconfig is not provided, at least one of element, manufacturer, or model "
+                       "must have a value or a wildcard ('*' or '?').")
+                if self.__error_handler:
+                    logger.error(msg + " Ignoring query.")
+                    return
+                else:
+                    logger.critical(msg)
+                    raise ValueError(msg)
+
         # Go through the user entry and address each one separately
         for key, value in user_input.items():
             logger.debug(f"Processing key: {key}, value: {value}")
