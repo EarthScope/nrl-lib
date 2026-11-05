@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nrl-lib"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Provide access to the NRL v2 web service"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -44,6 +44,9 @@ dev = [
 Homepage = "https://epic.earthscope.org/content/software-resources"
 Repository = "https://gitlab.com/earthscope/public/epic/nrl-lib"
 Changelog = "https://gitlab.com/earthscope/public/epic/nrl-lib/-/blob/main/HISTORY.rst"
+
+[tool.setuptools.dynamic]
+version = { attr = "nrl.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["nrl", "nrl.*"]
