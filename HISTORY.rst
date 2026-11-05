@@ -13,8 +13,9 @@ History
 - Improved performance of existing functions
 - Fixed bugs related to case sensitivity in user inputs
 
-1.0.0
------------
+1.0.0 (2026-11-05)
+------------------
+- Standardized package versioning on the 1.0.0 release schema
 - Renamed the distribution to nrl-lib (the import name is still nrl)
 - First release on conda-forge
 - Raised the minimum supported Python version to 3.11
