@@ -1,6 +1,6 @@
 package:
-  name: nrl
-  version: 2025.1.0.0
+  name: nrl-lib
+  version: 1.0.0
 
 source:
   path: ../
@@ -11,14 +11,18 @@ build:
   script: {{ PYTHON }} -m pip install --no-deps -vv .
 
 requirements:
-  build:
-    - python >=3.9
+  host:
+    - python >=3.11
     - pip
+    - setuptools >=77
   run:
-    - python >=3.9
-    - configobj
+    - python >=3.11
+    - requests
+    - pyyaml
 
 test:
+  imports:
+    - nrl
   source_files:
     - tests
   commands:
@@ -26,8 +30,7 @@ test:
 
 about:
   home: https://epic.earthscope.org/content/software-resources
-  dev_url: https://gitlab.com/earthscope/public/epic/nrl
-  license: GPLv3
+  dev_url: https://gitlab.com/earthscope/public/epic/nrl-lib
+  license: GPL-3.0-or-later
   license_file: LICENSE
   summary: Library to access the NRL v2 web service.
-
