@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nrl-lib"
 dynamic = ["version"]
-description = "Provide access to the NRL v2 web service"
+description = "Python client for the EarthScope Nominal Response Library (NRL) v2 web service"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
@@ -13,7 +13,7 @@ license-files = ["LICENSE", "AUTHORS.rst"]
 authors = [
     { name = "EPIC", email = "software@earthscope.org" },
 ]
-keywords = ["nrl"]
+keywords = ["nrl", "nominal response library", "seismology", "instrument response", "stationxml", "earthscope"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -43,6 +43,7 @@ dev = [
 [project.urls]
 Homepage = "https://epic.earthscope.org/content/software-resources"
 Repository = "https://gitlab.com/earthscope/public/epic/nrl-lib"
+Documentation = "https://gitlab.com/earthscope/public/epic/nrl-lib/-/blob/main/README.md"
 Changelog = "https://gitlab.com/earthscope/public/epic/nrl-lib/-/blob/main/HISTORY.rst"
 
 [tool.setuptools.dynamic]
