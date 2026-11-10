@@ -42,9 +42,10 @@ dev = [
 
 [project.urls]
 Homepage = "https://epic.earthscope.org/content/software-resources"
-Repository = "https://gitlab.com/earthscope/public/epic/nrl-lib"
-Documentation = "https://gitlab.com/earthscope/public/epic/nrl-lib/-/blob/main/README.md"
-Changelog = "https://gitlab.com/earthscope/public/epic/nrl-lib/-/blob/main/HISTORY.rst"
+Repository = "https://github.com/EarthScope/nrl-lib"
+Documentation = "https://github.com/EarthScope/nrl-lib/blob/main/README.md"
+Changelog = "https://github.com/EarthScope/nrl-lib/blob/main/HISTORY.rst"
+Issues = "https://github.com/EarthScope/nrl-lib/issues"
 
 [tool.setuptools.dynamic]
 version = { attr = "nrl.__version__" }

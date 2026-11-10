@@ -27,6 +27,10 @@
     ```
     conda install -c conda-forge nrl-lib
     ```
+    - From PyPI
+    ```
+    pip install nrl-lib
+    ```
     - From source, to install and test the library
     ```
     - conda create -n testNRL python=3.11
