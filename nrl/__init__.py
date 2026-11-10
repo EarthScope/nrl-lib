@@ -4,4 +4,4 @@
 
 __author__ = """EPIC - EarthScope Consortium"""
 __email__ = 'software@earthscope.org'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
